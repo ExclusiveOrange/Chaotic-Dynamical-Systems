@@ -64,14 +64,9 @@ namespace {
         }
     };
 
-
-    template< double(*fn)(double, double) >
-    auto test( auto c, auto x ) {
-        return fn( c, x );
-    }
-
-    template< class T, T(*fn)(T, T) >
+    template< class T = double, T (*fn)(T, T) >
     void make_pretty_picture(
+        const char *fnname,
         simg &img,
         const T cmin,
         const T cmax,
@@ -82,7 +77,6 @@ namespace {
         const int ignoreits,
         const srgba_light light = {-5, -5, -5, 0}
     ) {
-        
         cout << "rendering..." << flush;
         const unsigned width = img.w, height = img.h;
         for( unsigned col = 0; col < width; col++ ) {
@@ -99,7 +93,10 @@ namespace {
             }
         }
         cout << " done." << endl;
-
+        char fname[1024];
+        sprintf( fname, "%s_%ux%u_c[%g,%g]_x[%g,%g]_x0_%g.png",
+            fnname, img.w, img.h, cmin, cmax, xmin, xmax, x0 );
+        img.save( string(fname) );
     }
 
     auto Fc( auto c, auto x ) {
@@ -113,25 +110,18 @@ namespace {
 
 int main() {
 
-    const unsigned w = 2880 * 4, h = 1800;
+    const unsigned oversample = 4;
+    const unsigned w = 2880*oversample, h = 1800*oversample;
     cout << "allocating memory for a " << w << " x " << h << " image buffer..." << flush;
     simg img( w, h, {0, 0, 0, 255} );
     cout << " done." << endl;
 
-    char fname[1024]; // buffer for formatted file name
-
-    // Fc full range is c:[1, 4] x:[0, 1]
-    /*
-    make_pretty_picture<double, Fc>( img, 3.63, 4., 0.5, 0., 1., 10000, 100 );
-    sprintf( fname, "Fc_%ux%u.png", w, h );
-    img.save( string(fname) );
-    */
-
     // Qc full range is c:[-2, 0.25] x:[-2, 2] */
-    make_pretty_picture<double, Qc>( img, -2, 0.25, 0., -2., 2., 20000, 100, {5, 5, 5, 0});
-    sprintf( fname, "Qc_%ux%u.png", w, h );
-    img.save( string(fname) );
-
+    // -2, -0.74
+    // -2, -1.24
+    // -2, -1.365
+    // -2, -1.767
+    make_pretty_picture<double, Qc>( "Qc", img, -2, -1.767, 0., -2., 2., 1000000, 100, {1, 1, 1, 0});
 
     /*
     cout << "generating image..." << flush;
